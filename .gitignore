@@ -1,0 +1,7 @@
+# Ne jamais versionner de copies d'élèves ni de tables de correspondance
+*.pdf
+*.zip
+*.csv
+table_correspondance*
+copies_anonymes*
+.DS_Store

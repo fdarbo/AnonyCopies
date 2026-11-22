@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AnonyCopies – anonymiser des copies PDF</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6b66;--ac:#1f5eff;--bd:#d9d7cf;--ok:#1a7f43;--wr:#b45309}
+@media(prefers-color-scheme:dark){:root{--bg:#161615;--card:#212120;--tx:#ecebe6;--mut:#9a9992;--ac:#6c95ff;--bd:#3a3a37;--ok:#4cc77a;--wr:#f0a04b}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,sans-serif;padding:20px}
+main{max-width:1100px;margin:auto;display:grid;gap:16px}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.mut{color:var(--mut);font-size:13px}
+.drop{border:2px dashed var(--bd);border-radius:10px;padding:22px;text-align:center;cursor:pointer}
+.drop.on{border-color:var(--ac)}
+button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer}
+button.s{background:transparent;color:var(--tx);border:1px solid var(--bd)}button:disabled{opacity:.5;cursor:default}
+input[type=text],input[type=number]{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;font:inherit;width:100%}
+input[type=number]{width:80px}
+.grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+#wrap{position:relative;display:inline-block;touch-action:none;cursor:crosshair;max-width:100%;border:1px solid var(--bd)}
+#wrap canvas{display:block;max-width:100%;height:auto}
+#ov{position:absolute;inset:0;pointer-events:none}.z{position:absolute;border:2px solid #e11d48;background:rgba(225,29,72,.25);font-size:11px;color:#e11d48;font-weight:700}
+table{width:100%;border-collapse:collapse}td,th{padding:5px 6px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top;font-size:13px}
+tr.sel{background:color-mix(in srgb,var(--ac) 12%,transparent)}tr[data-i]{cursor:pointer}
+.ok{color:var(--ok)}.wr{color:var(--wr)}.opts{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.opts label{display:flex;gap:6px;align-items:center}
+details.help summary{cursor:pointer;font-weight:600}details.help ol,details.help ul{margin:8px 0 0;padding-left:20px}details.help li{margin:3px 0}details.help h3{font-size:14px;margin:12px 0 0}
+</style></head><body><main>
+<div><h1>AnonyCopies</h1>
+<div class="mut">Anonymisation de copies d’élèves et d’étudiants avant envoi à une IA. Tout se passe dans votre navigateur : vos copies ne sont jamais envoyées sur Internet.</div></div>
+
+<details class="card help"><summary>❓ Aide : comment utiliser AnonyCopies ?</summary>
+<h3>En 5 étapes</h3>
+<ol>
+<li><b>Chargez</b> les PDF des copies (glisser-déposer ou clic).</li>
+<li><b>Cliquez une copie</b> dans le tableau, puis <b>tracez à la souris</b> un rectangle sur chaque endroit où le nom apparaît. Plusieurs zones et plusieurs pages sont possibles (boutons ◀ ▶). La <b>1<sup>re</sup> zone reçoit le numéro</b>.</li>
+<li><b>Nom et prénom</b> (facultatif) : si le PDF contient du texte, les cases se remplissent seules. Nom et prénom sur deux lignes : 1<sup>re</sup> sélection → nom, 2<sup>e</sup> → prénom. Sinon, saisissez-les à la main ou laissez vide.</li>
+<li>Réglez la numérotation (ordre aléatoire recommandé) puis cliquez <b>Anonymiser</b>.</li>
+<li>Téléchargez le <b>ZIP</b> des copies anonymes (à envoyer à l’IA) et le <b>CSV</b> de correspondance (à garder pour vous, jamais avec les copies).</li>
+</ol>
+<h3>Bon à savoir</h3>
+<ul>
+<li><b>Gabarit identique ?</b> Tracez la zone sur une copie puis cliquez « Copier ces zones vers les copies sans zone » : elle est recopiée sur celles qui n’en ont pas encore, sans toucher aux autres.</li>
+<li><b>« Trouvé dans »</b> indique si le nom, le prénom ou les deux figurent dans le nom du fichier ou les métadonnées. Dans les copies produites, le nom de fichier est remplacé (<code>Copie_017.pdf</code>) et ces métadonnées sont supprimées.</li>
+<li><b>Sans zone</b>, la copie est quand même traitée : le numéro est placé en haut à gauche de la page 1, mais <b>rien ne masque le nom</b> s’il est écrit sur la copie.</li>
+<li>Les zones sont noircies définitivement ; le reste du texte est conservé, donc le PDF reste lisible par une IA. Les copies <b>scannées ou manuscrites</b> restent des images (pas de texte extractible).</li>
+<li>Vos fichiers ne sont envoyés nulle part. Seules les bibliothèques de l’outil sont chargées depuis Internet au démarrage.</li>
+<li>Cet outil <b>pseudonymise</b> : le CSV permet de ré-identifier les élèves, protégez-le. Vérifiez aussi qu’aucun prénom, numéro d’étudiant ou signature ne reste dans le corps des copies, et testez d’abord sur quelques copies.</li>
+</ul></details>
+
+<div class="card"><h2>1. Charger les copies (PDF)</h2>
+<div class="drop" id="drop">Glissez les PDF ici ou cliquez pour les choisir<input id="inp" type="file" accept="application/pdf" multiple hidden></div></div>
+
+<div class="grid">
+<div class="card"><h2>2. Sélectionnez le nom sur chaque copie</h2>
+<div class="mut" style="margin-bottom:8px">Choisissez une copie dans le tableau, puis cliquez-glissez sur chaque endroit où le nom apparaît (vous pouvez tracer plusieurs zones, sur plusieurs pages). La <b>première zone</b> reçoit le numéro. Si le nom et le prénom sont sur deux lignes, sélectionnez la 1<sup>re</sup> ligne (→ nom) puis la 2<sup>e</sup> (→ prénom).</div>
+<div class="opts" style="margin-bottom:8px"><button class="s" id="pv">◀</button><span id="pn">—</span><button class="s" id="nx">▶</button>
+<button class="s" id="clr">Effacer les zones de cette page</button><button class="s" id="cp">Copier ces zones vers les copies sans zone</button></div>
+<div id="hint" class="mut" style="margin-bottom:8px"></div>
+<div id="wrap"><canvas id="cv" width="10" height="10"></canvas><div id="ov"></div></div></div>
+<div class="card"><h2>3. Identités et repérage</h2>
+<div class="mut" style="margin-bottom:8px">Nom et prénom de chaque élève (préremplis depuis le texte de la zone si le PDF en contient). L’outil cherche ces mots dans le nom du fichier et les métadonnées.</div>
+<button class="s" id="guess" disabled>Déduire nom/prénom depuis les noms de fichiers</button>
+<div style="max-height:480px;overflow:auto;margin-top:8px"><table><thead><tr><th>Fichier</th><th>Nom</th><th>Prénom</th><th>Zones</th><th>Trouvé dans</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+</div>
+
+<div class="card"><h2>4. Anonymiser</h2>
+<div class="opts">
+<label>Premier n° <input type="number" id="st" value="1" min="0"></label>
+<label>Chiffres <input type="number" id="dg" value="3" min="1" max="6"></label>
+<label><input type="checkbox" id="rnd" checked> Ordre aléatoire (recommandé)</label>
+
+<button id="go" disabled>Anonymiser</button></div>
+<div class="mut" style="margin-top:10px" id="msg">Chaque page est redessinée (zones noircies pour de bon), puis le texte du PDF d’origine est rétabli <b>sauf</b> sous les zones : le fichier reste lisible par une IA. Fichiers produits : <b>Copie_017.pdf</b>, sans métadonnées d’origine.</div>
+<div id="res" style="margin-top:10px;display:none" class="opts">
+<button id="dz">Télécharger les copies (ZIP)</button><button id="dc" class="s">Télécharger la table de correspondance (CSV)</button></div>
+<div class="mut" id="warn" style="margin-top:8px;display:none">⚠ Gardez la table de correspondance à part : ne la transmettez pas avec les copies.</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=s=>document.querySelector(s);
+let files=[],sel=-1,zipBlob=null,csvBlob=null;
+const norm=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const toks=s=>norm(s).split(' ').filter(t=>t.length>1);
+const LBL={Title:'Titre',Author:'Auteur',Subject:'Sujet',Keywords:'Mots-clés',Creator:'Créateur'};
+function detect(f){
+  const fields=[['Nom du fichier',f.name.replace(/\.pdf$/i,'')],...Object.keys(LBL).map(k=>[LBL[k],f.info[k]])];
+  const N=toks(f.nom),P=toks(f.prenom),out=[];
+  if(!N.length&&!P.length)return null;
+  for(const[l,v]of fields){
+    if(!v)continue;const h=norm(v).replace(/ /g,'');
+    const hn=N.length&&N.every(t=>h.includes(t)),hp=P.length&&P.every(t=>h.includes(t));
+    if(hn||hp)out.push(l+' : '+(hn&&hp?'nom + prénom':hn?'nom seul':'prénom seul'));
+  }
+  return out;
+}
+function showDetect(i){
+  const r=detect(files[i]),el=$('#d'+i);
+  if(r===null){el.textContent='—';el.className='';return}
+  el.className=r.length?'wr':'ok';
+  el.innerHTML=r.length?r.join('<br>')+'<br><span class="mut">(supprimé du fichier produit)</span>':'Rien trouvé';
+}
+function buildTable(){
+  const tb=$('#tb');tb.innerHTML='';
+  files.forEach((f,i)=>{
+    const tr=document.createElement('tr');tr.dataset.i=i;
+    tr.innerHTML=`<td>${f.name.replace(/</g,'&lt;')}</td><td><input type="text" data-k="nom" value="${f.nom}"></td><td><input type="text" data-k="prenom" value="${f.prenom}"></td><td id="z${i}"></td><td id="d${i}"></td>`;
+    tr.onclick=e=>{if(sel!==i)preview(i,1)};
+    tr.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{f[inp.dataset.k]=inp.value;f.auto=false;showDetect(i)});
+    tb.appendChild(tr);showDetect(i);zc(i);
+  });
+  document.querySelectorAll('tr[data-i]').forEach(t=>t.classList.toggle('sel',+t.dataset.i===sel));
+  $('#guess').disabled=$('#go').disabled=!files.length;
+}
+function zc(i){const el=$('#z'+i);if(!el)return;const n=files[i].zones.length;el.innerHTML=n?`<span class="ok">${n}</span>`:'<span class="wr">0</span>'}
+async function addFiles(list){
+  for(const file of list){
+    if(!/\.pdf$/i.test(file.name))continue;
+    const buf=await file.arrayBuffer();let info={},doc;
+    try{doc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;info=(await doc.getMetadata()).info||{}}catch(e){alert('Illisible : '+file.name);continue}
+    files.push({name:file.name,doc,info,nom:'',prenom:'',zones:[],page:1});
+  }
+  buildTable();if(sel<0&&files.length)preview(0,1);
+}
+async function preview(i,p){
+  sel=i;const f=files[i];f.page=p;
+  document.querySelectorAll('tr[data-i]').forEach(t=>t.classList.toggle('sel',+t.dataset.i===i));
+  const pg=await f.doc.getPage(p),vp=pg.getViewport({scale:1.4}),cv=$('#cv');
+  cv.width=vp.width;cv.height=vp.height;
+  await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+  $('#pn').textContent=`${f.name} — page ${p}/${f.doc.numPages}`;drawZones();
+}
+function drawZones(){
+  const f=files[sel],ov=$('#ov');ov.innerHTML='';if(!f)return;
+  f.zones.forEach((z,k)=>{if(z.p!==f.page)return;const d=document.createElement('div');d.className='z';d.textContent=k===0?'n°':'';
+    Object.assign(d.style,{left:z.x*100+'%',top:z.y*100+'%',width:z.w*100+'%',height:z.h*100+'%'});ov.appendChild(d)});
+}
+const clean=t=>t.replace(/[’‘]/g,"'").replace(/[“”]/g,'"').normalize('NFC').replace(/[^\x20-\x7e\xa0-\xff]/g,'');
+function rect(it,vp){const t=pdfjsLib.Util.transform(vp.transform,it.transform),fs=Math.hypot(t[2],t[3]);
+  return{x:t[4],yb:t[5],fs,w:it.width*vp.scale,x0:t[4]/vp.width,y0:(t[5]-fs)/vp.height,x1:(t[4]+it.width*vp.scale)/vp.width,y1:(t[5]+fs*.25)/vp.height}}
+const hit=(r,z)=>r.x0<z.x+z.w&&r.x1>z.x&&r.y0<z.y+z.h&&r.y1>z.y;
+async function zoneText(f,z){
+  const pg=await f.doc.getPage(z.p),vp=pg.getViewport({scale:1}),tc=await pg.getTextContent();
+  return tc.items.filter(it=>it.str.trim()&&hit(rect(it,vp),z)).map(it=>it.str.trim()).join(' ').trim();
+}
+const wrap=$('#wrap');let st=null,cur=null;
+const pt=e=>{const r=wrap.getBoundingClientRect();return{x:Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y:Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))}};
+wrap.onpointerdown=e=>{if(sel<0)return;st=pt(e);cur={p:files[sel].page,x:st.x,y:st.y,w:0,h:0};files[sel].zones.push(cur);wrap.setPointerCapture(e.pointerId)};
+wrap.onpointermove=e=>{if(!st)return;const p=pt(e);Object.assign(cur,{x:Math.min(st.x,p.x),y:Math.min(st.y,p.y),w:Math.abs(p.x-st.x),h:Math.abs(p.y-st.y)});drawZones()};
+wrap.onpointerup=async()=>{
+  if(!st)return;st=null;const f=files[sel];
+  if(cur.w<.01||cur.h<.01){f.zones.splice(f.zones.indexOf(cur),1);drawZones();return}
+  zc(sel);const z=cur,txt=await zoneText(f,z);z.txt=txt;
+  $('#hint').textContent=txt?`Texte détecté dans la zone : « ${txt} »`:'Aucun texte dans cette zone (copie scannée ou manuscrite) : saisissez le nom à droite.';
+  const n=f.zones.indexOf(z)+1,tr=document.querySelector(`tr[data-i="${sel}"]`);
+  const setN=(nom,pre)=>{f.nom=nom;f.prenom=pre;tr.querySelector('[data-k=nom]').value=nom;tr.querySelector('[data-k=prenom]').value=pre;showDetect(sel)};
+  if(n===1&&txt&&!f.nom&&!f.prenom){const w=txt.split(/\s+/);setN(w[0],w.slice(1).join(' '));f.auto=true}
+  else if(n===2&&(f.auto||(!f.nom&&!f.prenom))){
+    const t1=f.zones[0].txt||'';
+    if(t1||txt){setN(t1,txt);f.auto=true;$('#hint').textContent=`Ligne 1 → nom : « ${t1} » ; ligne 2 → prénom : « ${txt} »`}
+  }
+};
+$('#pv').onclick=()=>{const f=files[sel];if(f&&f.page>1)preview(sel,f.page-1)};
+$('#nx').onclick=()=>{const f=files[sel];if(f&&f.page<f.doc.numPages)preview(sel,f.page+1)};
+$('#clr').onclick=()=>{const f=files[sel];if(!f)return;f.zones=f.zones.filter(z=>z.p!==f.page);zc(sel);drawZones()};
+$('#cp').onclick=()=>{const f=files[sel];if(!f||!f.zones.length)return;files.forEach((g,i)=>{if(!g.zones.length){g.zones=f.zones.map(z=>({...z}));zc(i)}})};
+$('#guess').onclick=()=>{files.forEach(f=>{const t=f.name.replace(/\.pdf$/i,'').split(/[\s_\-.]+/).filter(Boolean);f.nom=t[0]||'';f.prenom=t[1]||''});buildTable()};
+const drop=$('#drop'),inp=$('#inp');
+drop.onclick=()=>inp.click();inp.onchange=()=>addFiles([...inp.files]);
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('on')};drop.ondragleave=()=>drop.classList.remove('on');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');addFiles([...e.dataTransfer.files])};
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
+$('#dz').onclick=()=>dl(zipBlob,'copies_anonymes.zip');
+$('#dc').onclick=()=>dl(csvBlob,'table_correspondance_CONFIDENTIEL.csv');
+
+$('#go').onclick=async()=>{
+  const msg=$('#msg'),n=files.length,dg=+$('#dg').value||3,start=+$('#st').value||0;
+  let order=files.map((_,i)=>i);
+  if($('#rnd').checked)for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
+  const zip=new JSZip(),rows=[['numero','nom','prenom','fichier_original','titre_origine','auteur_origine']];
+  $('#go').disabled=true;$('#res').style.display='none';
+  try{
+    for(let k=0;k<n;k++){
+      const f=files[order[k]],num=String(start+k).padStart(dg,'0');
+      msg.textContent=`Traitement ${k+1}/${n} : ${f.name}…`;
+      const out=await PDFLib.PDFDocument.create({updateMetadata:false});
+      const hv=await out.embedFont(PDFLib.StandardFonts.Helvetica),hb=await out.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      out.setTitle('Copie '+num);
+      for(let p=1;p<=f.doc.numPages;p++){
+        const pg=await f.doc.getPage(p),b=pg.getViewport({scale:1}),vp=pg.getViewport({scale:2});
+        const SZ=f.zones[0]||{p:1,x:.02,y:.02,w:.14,h:.04},zs=f.zones.filter(z=>z.p===p);if(!f.zones.length&&p===1)zs.push(SZ);
+        const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+        const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+        await pg.render({canvasContext:x,viewport:vp}).promise;
+        x.fillStyle='#000';zs.forEach(z=>x.fillRect(z.x*c.width,z.y*c.height,z.w*c.width,z.h*c.height));
+        const jpg=await out.embedJpg(c.toDataURL('image/jpeg',.88));
+        const page=out.addPage([b.width,b.height]);page.drawImage(jpg,{x:0,y:0,width:b.width,height:b.height});
+        const tc=await pg.getTextContent();
+        for(const it of tc.items){
+          if(!it.str||!it.str.trim())continue;const r=rect(it,b);
+          if(zs.some(z=>hit(r,z)))continue;const t=clean(it.str);if(!t.trim()||r.fs<1)continue;
+          try{page.drawText(t,{x:r.x,y:b.height-r.yb,size:r.fs,font:hv,opacity:0})}catch(e){}
+        }
+        if(SZ.p===p){const z=SZ,zw=z.w*b.width,zh=z.h*b.height;
+          let sz=zh*.7;const tw=hb.widthOfTextAtSize(num,sz);if(tw>zw*.9)sz*=zw*.9/tw;
+          page.drawText(num,{x:z.x*b.width+(zw-hb.widthOfTextAtSize(num,sz))/2,y:b.height-(z.y*b.height+zh/2)-sz*.35,size:sz,font:hb,color:PDFLib.rgb(1,1,1)})}
+      }
+      zip.file(`Copie_${num}.pdf`,await out.save());
+      const q=s=>'"'+String(s||'').replace(/"/g,'""')+'"';
+      rows.push([num,q(f.nom),q(f.prenom),q(f.name),q(f.info.Title),q(f.info.Author)]);
+    }
+    const head=rows.shift();rows.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));rows.unshift(head);
+    csvBlob=new Blob(['\ufeff'+rows.map(r=>r.join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+    zipBlob=await zip.generateAsync({type:'blob'});
+    const nz=files.filter(f=>!f.zones.length).length;msg.textContent=`Terminé : ${n} copie(s) anonymisée(s).`+(nz?` ${nz} copie(s) sans zone : numéro placé en haut à gauche de la page 1, sans rien masquer d’autre.`:'');
+    $('#res').style.display='flex';$('#warn').style.display='block';
+  }catch(e){msg.textContent='Erreur : '+e.message}
+  $('#go').disabled=false;
+};
+</script></main></body></html>

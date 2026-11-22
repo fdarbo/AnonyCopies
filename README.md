@@ -4,15 +4,13 @@
 
 AnonyCopies est une page web unique (`index.html`) qui fonctionne **entièrement dans votre navigateur** : les copies ne sont envoyées nulle part, aucun serveur, aucun compte, aucune installation.
 
-![Aperçu d'Anonycopie](docs/apercu.svg)
-
 *Avant : sélection du nom sur la copie d'origine.*
 
-![sélection du nom sur la copie d'origine](/home/fdarbo/Anonycopies/docs/apercu.png)
+![sélection du nom sur la copie d'origine](docs/apercu.png)
 
 *Après : copie anonymisée produite (nom noirci, numéro, métadonnées supprimées).*
 
-![copie anonymisée produite](/home/fdarbo/Anonycopies/docs/apercu-anonymise.png)
+![copie anonymisée produite](docs/apercu-anonymise.png)
 
 ## Ce que fait l'outil
 
